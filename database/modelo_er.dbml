@@ -1,0 +1,128 @@
+// ============================================================================
+// Modelo Entidad-Relación - DistribuidoraDB
+// Pegue este contenido en https://dbdiagram.io para generar el diagrama visual.
+// ============================================================================
+
+Table roles {
+  id int [pk, increment]
+  nombre nvarchar [unique, not null]
+  descripcion nvarchar
+  creado_en datetime2
+}
+
+Table usuarios {
+  id int [pk, increment]
+  nombre nvarchar [not null]
+  email nvarchar [unique, not null]
+  password_hash nvarchar [not null]
+  rol_id int [ref: > roles.id, not null]
+  activo bit
+  reset_token nvarchar
+  reset_expira datetime2
+  ultimo_acceso datetime2
+  creado_en datetime2
+}
+
+Table categorias {
+  id int [pk, increment]
+  nombre nvarchar [unique, not null]
+  descripcion nvarchar
+  activo bit
+  creado_en datetime2
+}
+
+Table productos {
+  id int [pk, increment]
+  sku nvarchar [unique, not null]
+  nombre nvarchar [not null]
+  categoria_id int [ref: > categorias.id]
+  unidad nvarchar
+  precio_compra decimal
+  precio_venta decimal
+  stock_actual decimal
+  stock_minimo decimal
+  activo bit
+  creado_en datetime2
+}
+
+Table movimientos_inventario {
+  id int [pk, increment]
+  producto_id int [ref: > productos.id, not null]
+  tipo nvarchar [note: 'ENTRADA | SALIDA']
+  cantidad decimal
+  stock_previo decimal
+  stock_nuevo decimal
+  motivo nvarchar
+  referencia nvarchar
+  usuario_id int [ref: > usuarios.id]
+  fecha datetime2
+}
+
+Table proveedores {
+  id int [pk, increment]
+  nombre nvarchar [not null]
+  contacto nvarchar
+  telefono nvarchar
+  email nvarchar
+  direccion nvarchar
+  activo bit
+  creado_en datetime2
+}
+
+Table ordenes_compra {
+  id int [pk, increment]
+  proveedor_id int [ref: > proveedores.id, not null]
+  fecha date
+  estado nvarchar [note: 'PENDIENTE | RECIBIDA | ANULADA']
+  total decimal
+  observaciones nvarchar
+  usuario_id int [ref: > usuarios.id]
+  creado_en datetime2
+}
+
+Table orden_compra_detalle {
+  id int [pk, increment]
+  orden_id int [ref: > ordenes_compra.id, not null]
+  producto_id int [ref: > productos.id, not null]
+  cantidad decimal
+  costo_unitario decimal
+  subtotal decimal [note: 'calculado']
+}
+
+Table ventas {
+  id int [pk, increment]
+  fecha date
+  total decimal
+  observaciones nvarchar
+  usuario_id int [ref: > usuarios.id]
+  creado_en datetime2
+}
+
+Table venta_detalle {
+  id int [pk, increment]
+  venta_id int [ref: > ventas.id, not null]
+  producto_id int [ref: > productos.id, not null]
+  cantidad decimal
+  precio_unitario decimal
+  subtotal decimal [note: 'calculado']
+}
+
+Table alertas {
+  id int [pk, increment]
+  tipo nvarchar [note: 'STOCK_MINIMO | REPOSICION']
+  producto_id int [ref: > productos.id]
+  mensaje nvarchar
+  nivel nvarchar [note: 'INFO | ADVERTENCIA | CRITICO']
+  resuelta bit
+  creado_en datetime2
+}
+
+Table recomendaciones {
+  id int [pk, increment]
+  tipo nvarchar [note: 'REPOSICION | CANTIDAD_OPTIMA | INSIGHT_IA']
+  producto_id int [ref: > productos.id]
+  titulo nvarchar
+  contenido nvarchar
+  origen nvarchar [note: 'ESTADISTICO | IA']
+  creado_en datetime2
+}
