@@ -3,11 +3,12 @@ import api, { errorMsg } from '../api/client.js';
 import Modal from '../components/Modal.jsx';
 import { PageHeader, Alerta, Cargando, Vacio } from '../components/ui.jsx';
 
-/* Catálogo de direcciones (Cluster / Casa) para asignar en las ventas. */
-const vacio = { cluster: '', casa: '', nombre_cliente: '', referencia: '' };
+/* Catálogo de direcciones (Cluster / Casa). Cada dirección pertenece a un cliente. */
+const vacio = { cliente_id: '', cluster: '', casa: '', referencia: '' };
 
 export default function Direcciones() {
   const [items, setItems] = useState(null);
+  const [clientes, setClientes] = useState([]);
   const [buscar, setBuscar] = useState('');
   const [error, setError] = useState('');
   const [modal, setModal] = useState(null);
@@ -23,17 +24,22 @@ export default function Direcciones() {
     }
   };
   useEffect(() => {
+    api.get('/clientes').then((r) => setClientes(r.data.data)).catch(() => {});
+  }, []);
+  useEffect(() => {
     const t = setTimeout(cargar, 250);
     return () => clearTimeout(t);
   }, [buscar]);
 
   const abrir = (d = null) => {
-    setForm(d ? { cluster: d.cluster, casa: d.casa, nombre_cliente: d.nombre_cliente || '', referencia: d.referencia || '' } : vacio);
+    setForm(d ? { cliente_id: d.cliente_id, cluster: d.cluster, casa: d.casa, referencia: d.referencia || '' } : vacio);
     setModal(d || {});
     setError('');
+    api.get('/clientes').then((r) => setClientes(r.data.data)).catch(() => {});
   };
 
   const guardar = async () => {
+    if (!form.cliente_id) return setError('Seleccione el cliente dueño de la dirección');
     setGuardando(true);
     setError('');
     try {
@@ -58,7 +64,7 @@ export default function Direcciones() {
 
   return (
     <>
-      <PageHeader titulo="Direcciones" subtitulo="Clusters y casas de sus clientes para asignar en las ventas">
+      <PageHeader titulo="Direcciones" subtitulo="Clusters y casas asociados a cada cliente">
         <button className="btn btn-primary" onClick={() => abrir()}>
           <i className="bi bi-plus-lg me-1"></i>Nueva dirección
         </button>
@@ -79,14 +85,14 @@ export default function Direcciones() {
             <div className="table-responsive">
               <table className="table table-sm table-hover align-middle mb-0">
                 <thead>
-                  <tr><th>Cluster</th><th>Casa</th><th>Cliente</th><th>Referencia</th><th></th></tr>
+                  <tr><th>Cliente</th><th>Cluster</th><th>Casa</th><th>Referencia</th><th></th></tr>
                 </thead>
                 <tbody>
                   {items.map((d) => (
                     <tr key={d.id}>
-                      <td className="fw-semibold">{d.cluster}</td>
+                      <td className="fw-semibold">{d.nombre_cliente}</td>
+                      <td>{d.cluster}</td>
                       <td>{d.casa}</td>
-                      <td>{d.nombre_cliente || '-'}</td>
                       <td className="small text-muted">{d.referencia || '-'}</td>
                       <td className="text-end">
                         <button className="btn btn-sm btn-outline-primary me-1" onClick={() => abrir(d)}><i className="bi bi-pencil"></i></button>
@@ -104,6 +110,14 @@ export default function Direcciones() {
       {modal && (
         <Modal titulo={modal.id ? 'Editar dirección' : 'Nueva dirección'} onClose={() => setModal(null)} onGuardar={guardar} guardando={guardando}>
           <div className="row g-3">
+            <div className="col-md-12">
+              <label className="form-label">Cliente *</label>
+              <select className="form-select" value={form.cliente_id} onChange={set('cliente_id')}>
+                <option value="">— Seleccione el cliente —</option>
+                {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}{c.telefono ? ` · ${c.telefono}` : ''}</option>)}
+              </select>
+              <div className="form-text">Los clientes se administran en la pantalla "Clientes".</div>
+            </div>
             <div className="col-md-6">
               <label className="form-label">Cluster *</label>
               <input className="form-control" value={form.cluster} onChange={set('cluster')} placeholder="Ej. Cluster 1" />
@@ -111,10 +125,6 @@ export default function Direcciones() {
             <div className="col-md-6">
               <label className="form-label">Casa *</label>
               <input className="form-control" value={form.casa} onChange={set('casa')} placeholder="Ej. 12" />
-            </div>
-            <div className="col-md-12">
-              <label className="form-label">Nombre del cliente</label>
-              <input className="form-control" value={form.nombre_cliente} onChange={set('nombre_cliente')} />
             </div>
             <div className="col-md-12">
               <label className="form-label">Referencia</label>

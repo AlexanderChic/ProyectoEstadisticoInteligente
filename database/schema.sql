@@ -172,11 +172,14 @@ CREATE TABLE dbo.ventas (
     total          DECIMAL(12,2) NOT NULL DEFAULT 0,
     observaciones  NVARCHAR(255) NULL,
     nit            NVARCHAR(30)  NULL,   -- datos de cliente (opcionales según config)
-    nombre_cliente NVARCHAR(160) NULL,
-    direccion      NVARCHAR(255) NULL,
+    nombre_cliente NVARCHAR(160) NULL,   -- snapshot del nombre al momento de la venta
+    direccion      NVARCHAR(255) NULL,   -- snapshot de la dirección
+    cliente_id     INT           NULL,   -- cliente asociado (trazabilidad)
+    direccion_id   INT           NULL,   -- dirección de entrega asociada
     usuario_id     INT           NULL,
     creado_en      DATETIME2     NOT NULL DEFAULT SYSDATETIME(),
     CONSTRAINT FK_venta_usuario FOREIGN KEY (usuario_id) REFERENCES dbo.usuarios(id)
+    /* FK a clientes y direcciones se agregan al final (esas tablas se crean después) */
 );
 GO
 CREATE INDEX IX_ventas_fecha ON dbo.ventas(fecha);
@@ -242,19 +245,44 @@ CREATE TABLE dbo.config_factura (
 INSERT INTO dbo.config_factura (id) VALUES (1);
 GO
 
+/* Se elimina primero direcciones (depende de clientes), luego clientes */
 IF OBJECT_ID('dbo.direcciones','U') IS NOT NULL DROP TABLE dbo.direcciones;
+IF OBJECT_ID('dbo.clientes','U')    IS NOT NULL DROP TABLE dbo.clientes;
+GO
+
+/* Clientes: un cliente (nombre, teléfono, NIT) puede tener varias direcciones */
+CREATE TABLE dbo.clientes (
+    id        INT IDENTITY(1,1) PRIMARY KEY,
+    nombre    NVARCHAR(160) NOT NULL,
+    telefono  NVARCHAR(40)  NULL,
+    nit       NVARCHAR(30)  NULL,
+    activo    BIT           NOT NULL DEFAULT 1,
+    creado_en DATETIME2     NOT NULL DEFAULT SYSDATETIME()
+);
+GO
+CREATE INDEX IX_clientes_nombre ON dbo.clientes(nombre);
+GO
+
+/* Direcciones (Cluster / Casa) — cada una pertenece a un cliente */
 CREATE TABLE dbo.direcciones (
-    id             INT IDENTITY(1,1) PRIMARY KEY,
-    cluster        NVARCHAR(60)  NOT NULL,
-    casa           NVARCHAR(60)  NOT NULL,
-    nombre_cliente NVARCHAR(160) NULL,
-    referencia     NVARCHAR(255) NULL,
-    activo         BIT NOT NULL DEFAULT 1,
-    creado_en      DATETIME2 NOT NULL DEFAULT SYSDATETIME()
+    id         INT IDENTITY(1,1) PRIMARY KEY,
+    cliente_id INT           NOT NULL,
+    cluster    NVARCHAR(60)  NOT NULL,
+    casa       NVARCHAR(60)  NOT NULL,
+    referencia NVARCHAR(255) NULL,
+    activo     BIT NOT NULL DEFAULT 1,
+    creado_en  DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    CONSTRAINT FK_direcciones_cliente FOREIGN KEY (cliente_id) REFERENCES dbo.clientes(id)
 );
 GO
 CREATE INDEX IX_direcciones_cluster ON dbo.direcciones(cluster);
 CREATE INDEX IX_direcciones_casa    ON dbo.direcciones(casa);
+CREATE INDEX IX_direcciones_cliente ON dbo.direcciones(cliente_id);
+GO
+
+/* FK de ventas hacia clientes y direcciones (ya existen ambas tablas) */
+ALTER TABLE dbo.ventas ADD CONSTRAINT FK_ventas_cliente   FOREIGN KEY (cliente_id)   REFERENCES dbo.clientes(id);
+ALTER TABLE dbo.ventas ADD CONSTRAINT FK_ventas_direccion FOREIGN KEY (direccion_id) REFERENCES dbo.direcciones(id);
 GO
 
 PRINT 'Esquema DistribuidoraDB creado correctamente.';

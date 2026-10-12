@@ -13,7 +13,7 @@ router.post(
   '/',
   permitirRoles('Administrador', 'Propietario', 'Empleado'),
   asyncHandler(async (req, res) => {
-    const { fecha, observaciones, items, nit, nombre_cliente, direccion } = req.body;
+    const { fecha, observaciones, items, nit, nombre_cliente, direccion, cliente_id, direccion_id } = req.body;
     if (!Array.isArray(items) || items.length === 0) throw badRequest('Debe incluir al menos un producto');
     for (const it of items) {
       if (!it.producto_id || !it.cantidad || Number(it.cantidad) <= 0)
@@ -32,10 +32,12 @@ router.post(
       cab.input('nit', sql.NVarChar(30), nit || null);
       cab.input('cliente', sql.NVarChar(160), nombre_cliente || null);
       cab.input('dir', sql.NVarChar(255), direccion || null);
+      cab.input('cliente_id', sql.Int, cliente_id || null);
+      cab.input('direccion_id', sql.Int, direccion_id || null);
       const ventaId = (
         await cab.query(
-          `INSERT INTO dbo.ventas (fecha, observaciones, usuario_id, nit, nombre_cliente, direccion)
-           OUTPUT INSERTED.id VALUES (@fecha, @obs, @uid, @nit, @cliente, @dir)`
+          `INSERT INTO dbo.ventas (fecha, observaciones, usuario_id, nit, nombre_cliente, direccion, cliente_id, direccion_id)
+           OUTPUT INSERTED.id VALUES (@fecha, @obs, @uid, @nit, @cliente, @dir, @cliente_id, @direccion_id)`
         )
       ).recordset[0].id;
 

@@ -15,6 +15,7 @@ const enlaces = [
   { to: '/ventas', icon: 'bi-cart-check', texto: 'Ventas' },
   { to: '/proveedores', icon: 'bi-truck', texto: 'Proveedores' },
   { to: '/compras', icon: 'bi-bag-plus', texto: 'Compras' },
+  { to: '/clientes', icon: 'bi-person-vcard', texto: 'Clientes' },
   { to: '/direcciones', icon: 'bi-geo-alt', texto: 'Direcciones' },
   { seccion: 'Inteligencia' },
   { to: '/analisis', icon: 'bi-graph-up-arrow', texto: 'Análisis Estadístico' },

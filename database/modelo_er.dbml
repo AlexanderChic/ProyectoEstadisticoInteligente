@@ -89,11 +89,25 @@ Table orden_compra_detalle {
   subtotal decimal [note: 'calculado']
 }
 
+Table clientes {
+  id int [pk, increment]
+  nombre nvarchar [not null]
+  telefono nvarchar
+  nit nvarchar
+  activo bit
+  creado_en datetime2
+}
+
 Table ventas {
   id int [pk, increment]
   fecha date
   total decimal
   observaciones nvarchar
+  nit nvarchar
+  nombre_cliente nvarchar
+  direccion nvarchar
+  cliente_id int [ref: > clientes.id]
+  direccion_id int [ref: > direcciones.id]
   usuario_id int [ref: > usuarios.id]
   creado_en datetime2
 }
@@ -125,4 +139,22 @@ Table recomendaciones {
   contenido nvarchar
   origen nvarchar [note: 'ESTADISTICO | IA']
   creado_en datetime2
+}
+
+Table direcciones {
+  id int [pk, increment]
+  cliente_id int [ref: > clientes.id, not null]
+  cluster nvarchar [not null]
+  casa nvarchar [not null]
+  referencia nvarchar
+  activo bit
+  creado_en datetime2
+}
+
+Table config_factura {
+  id int [pk, note: 'fila única (configuración global, sin relación)']
+  mostrar_nit bit
+  mostrar_nombre_cliente bit
+  mostrar_direccion bit
+  actualizado_en datetime2
 }

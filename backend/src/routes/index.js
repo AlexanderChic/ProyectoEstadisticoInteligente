@@ -14,6 +14,7 @@ import dashboard from './dashboard.routes.js';
 import importacion from './importacion.routes.js';
 import configuracion from './config.routes.js';
 import direcciones from './direcciones.routes.js';
+import clientes from './clientes.routes.js';
 
 const router = Router();
 
@@ -36,5 +37,6 @@ router.use('/dashboard', dashboard);
 router.use('/importacion', importacion);
 router.use('/config', configuracion);
 router.use('/direcciones', direcciones);
+router.use('/clientes', clientes);
 
 export default router;

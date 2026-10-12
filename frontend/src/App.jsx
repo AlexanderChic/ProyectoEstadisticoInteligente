@@ -15,6 +15,7 @@ import Recomendaciones from './pages/Recomendaciones.jsx';
 import Reportes from './pages/Reportes.jsx';
 import Importacion from './pages/Importacion.jsx';
 import Direcciones from './pages/Direcciones.jsx';
+import Clientes from './pages/Clientes.jsx';
 import ConfiguracionFactura from './pages/ConfiguracionFactura.jsx';
 import Usuarios from './pages/Usuarios.jsx';
 
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="recomendaciones" element={<Recomendaciones />} />
         <Route path="reportes" element={<Reportes />} />
         <Route path="importacion" element={<Importacion />} />
+        <Route path="clientes" element={<Clientes />} />
         <Route path="direcciones" element={<Direcciones />} />
         <Route
           path="usuarios"

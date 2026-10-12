@@ -7,32 +7,34 @@ import { badRequest, notFound } from '../utils/httpError.js';
 const router = Router();
 router.use(autenticar);
 
-/* Búsqueda rápida de direcciones (Cluster / Casa / cliente) para la venta. */
+/* Búsqueda de direcciones (por Cluster, Casa o nombre del cliente) para la venta.
+   Cada dirección pertenece a un cliente (cliente_id). */
 router.get(
   '/',
   asyncHandler(async (req, res) => {
     const { buscar } = req.query;
     const { recordset } = await query(
-      `SELECT id, cluster, casa, nombre_cliente, referencia, activo
-       FROM dbo.direcciones
-       WHERE activo = 1
+      `SELECT d.id, d.cluster, d.casa, d.referencia, d.activo, d.cliente_id,
+              c.nombre AS nombre_cliente, c.telefono, c.nit
+       FROM dbo.direcciones d
+       JOIN dbo.clientes c ON c.id = d.cliente_id
+       WHERE d.activo = 1
          AND (@buscar IS NULL
-              OR cluster LIKE '%' + @buscar + '%'
-              OR casa LIKE '%' + @buscar + '%'
-              OR nombre_cliente LIKE '%' + @buscar + '%')
-       ORDER BY cluster, casa`,
+              OR d.cluster LIKE '%' + @buscar + '%'
+              OR d.casa LIKE '%' + @buscar + '%'
+              OR c.nombre LIKE '%' + @buscar + '%')
+       ORDER BY d.cluster, d.casa`,
       { buscar: buscar || null }
     );
-    // etiqueta lista para el dropdown
     const data = recordset.map((d) => ({
       ...d,
-      etiqueta: `${d.cluster} · Casa ${d.casa}${d.nombre_cliente ? ' — ' + d.nombre_cliente : ''}`,
+      etiqueta: `${d.cluster} · Casa ${d.casa} — ${d.nombre_cliente}`,
     }));
     res.json({ ok: true, data });
   })
 );
 
-/* Lista de clusters existentes (para agrupar / autocompletar) */
+/* Clusters existentes (para agrupar / autocompletar) */
 router.get(
   '/clusters',
   asyncHandler(async (_req, res) => {
@@ -47,12 +49,13 @@ router.post(
   '/',
   permitirRoles('Administrador', 'Propietario', 'Empleado'),
   asyncHandler(async (req, res) => {
-    const { cluster, casa, nombre_cliente, referencia } = req.body;
+    const { cliente_id, cluster, casa, referencia } = req.body;
+    if (!cliente_id) throw badRequest('Debe asociar la dirección a un cliente');
     if (!cluster || !casa) throw badRequest('Cluster y casa son obligatorios');
     const { recordset } = await query(
-      `INSERT INTO dbo.direcciones (cluster, casa, nombre_cliente, referencia)
-       OUTPUT INSERTED.id VALUES (@cluster, @casa, @nombre, @ref)`,
-      { cluster, casa, nombre: nombre_cliente || null, ref: referencia || null }
+      `INSERT INTO dbo.direcciones (cliente_id, cluster, casa, referencia)
+       OUTPUT INSERTED.id VALUES (@cliente_id, @cluster, @casa, @ref)`,
+      { cliente_id, cluster, casa, ref: referencia || null }
     );
     res.status(201).json({ ok: true, id: recordset[0].id });
   })
@@ -62,21 +65,13 @@ router.put(
   '/:id',
   permitirRoles('Administrador', 'Propietario', 'Empleado'),
   asyncHandler(async (req, res) => {
-    const existe = (await query('SELECT id FROM dbo.direcciones WHERE id = @id', { id: req.params.id }))
-      .recordset[0];
+    const existe = (await query('SELECT id FROM dbo.direcciones WHERE id = @id', { id: req.params.id })).recordset[0];
     if (!existe) throw notFound('Dirección no encontrada');
-    const { cluster, casa, nombre_cliente, referencia, activo } = req.body;
+    const { cliente_id, cluster, casa, referencia, activo } = req.body;
     await query(
-      `UPDATE dbo.direcciones SET cluster=@cluster, casa=@casa, nombre_cliente=@nombre,
+      `UPDATE dbo.direcciones SET cliente_id=@cliente_id, cluster=@cluster, casa=@casa,
               referencia=@ref, activo=@activo WHERE id=@id`,
-      {
-        id: req.params.id,
-        cluster,
-        casa,
-        nombre: nombre_cliente || null,
-        ref: referencia || null,
-        activo: activo === false ? 0 : 1,
-      }
+      { id: req.params.id, cliente_id, cluster, casa, ref: referencia || null, activo: activo === false ? 0 : 1 }
     );
     res.json({ ok: true });
   })

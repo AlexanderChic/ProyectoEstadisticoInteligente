@@ -26,6 +26,8 @@ export default function VentaRapida({ abierto, onCerrar, onCambio }) {
   const [dirOpciones, setDirOpciones] = useState([]);
   const [dirSeleccionada, setDirSeleccionada] = useState('');
   const [dirAbierto, setDirAbierto] = useState(false);
+  const [dirClienteId, setDirClienteId] = useState(null);
+  const [dirDireccionId, setDirDireccionId] = useState(null);
   // Búsqueda de producto por nombre (para los que no tienen código de barras)
   const [prodBusqueda, setProdBusqueda] = useState('');
   const [prodOpciones, setProdOpciones] = useState([]);
@@ -37,6 +39,7 @@ export default function VentaRapida({ abierto, onCerrar, onCambio }) {
     if (abierto) {
       setItems([]); setFactura(null); setError(''); setAviso(''); setCodigo('');
       setNit(''); setNombreCliente(''); setDirBusqueda(''); setDirSeleccionada(''); setDirOpciones([]);
+      setDirClienteId(null); setDirDireccionId(null);
       api.get('/config/factura').then((r) => setConfig(r.data.data)).catch(() => {});
       enfocar();
     }
@@ -107,7 +110,10 @@ export default function VentaRapida({ abierto, onCerrar, onCambio }) {
   function elegirDireccion(d) {
     setDirSeleccionada(d.etiqueta);
     setDirBusqueda(d.etiqueta);
-    if (!nombreCliente && d.nombre_cliente) setNombreCliente(d.nombre_cliente);
+    setDirClienteId(d.cliente_id);
+    setDirDireccionId(d.id);
+    if (d.nombre_cliente) setNombreCliente(d.nombre_cliente);
+    if (!nit && d.nit) setNit(d.nit); // autocompleta el NIT del cliente
     setDirAbierto(false);
     setDirOpciones([]);
   }
@@ -121,6 +127,8 @@ export default function VentaRapida({ abierto, onCerrar, onCambio }) {
         nit: config.mostrar_nit ? nit || null : null,
         nombre_cliente: config.mostrar_nombre_cliente ? nombreCliente || null : null,
         direccion: config.mostrar_direccion ? (dirSeleccionada || dirBusqueda || null) : null,
+        cliente_id: dirClienteId || null,
+        direccion_id: dirDireccionId || null,
       });
       setFactura({
         id: data.id, fecha: new Date(), items: [...items], total: data.total ?? total,
