@@ -128,6 +128,9 @@ export default function Usuarios() {
               Contraseña {modal.id && <span className="text-muted small">(dejar vacío para no cambiar)</span>}
             </label>
             <input type="password" className="form-control" value={form.password} onChange={set('password')} />
+            <div className="form-text">
+              Mínimo 8 caracteres, con una mayúscula, una minúscula y un número.
+            </div>
           </div>
           <div className="row g-3">
             <div className="col-md-7">

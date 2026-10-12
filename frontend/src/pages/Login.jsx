@@ -12,6 +12,8 @@ export default function Login() {
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
   const [cargando, setCargando] = useState(false);
+  // Aviso de sesión expirada por inactividad (?expirada=1)
+  const sesionExpirada = new URLSearchParams(window.location.search).get('expirada') === '1';
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
@@ -60,6 +62,11 @@ export default function Login() {
           </div>
 
           <h6 className="mb-3">{titulos[modo]}</h6>
+          {sesionExpirada && modo === 'login' && (
+            <div className="alert alert-warning py-2">
+              <i className="bi bi-clock-history me-1"></i>Su sesión expiró por inactividad. Inicie sesión de nuevo.
+            </div>
+          )}
           <Alerta tipo="danger" onClose={() => setError('')}>{error}</Alerta>
           <Alerta tipo="success" onClose={() => setOk('')}>{ok}</Alerta>
 
@@ -84,6 +91,11 @@ export default function Login() {
                   onChange={set('password')}
                   required
                 />
+                {modo === 'setup' && (
+                  <div className="form-text">
+                    Mínimo 8 caracteres, con una mayúscula, una minúscula y un número.
+                  </div>
+                )}
               </div>
             )}
             <button className="btn btn-primary w-100" disabled={cargando}>

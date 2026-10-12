@@ -5,6 +5,7 @@ import { query, sql } from '../config/db.js';
 import { firmarToken, autenticar } from '../middleware/auth.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { badRequest, unauthorized, notFound, conflict } from '../utils/httpError.js';
+import { validarPassword } from '../utils/password.js';
 
 const router = Router();
 
@@ -50,6 +51,23 @@ router.get(
   })
 );
 
+/* Renueva el token (ventana deslizante): mientras el usuario esté activo, el
+   frontend llama a este endpoint y la sesión se mantiene. Si no hay actividad,
+   el token caduca a los 20 minutos y la sesión expira. */
+router.get(
+  '/refresh',
+  autenticar,
+  asyncHandler(async (req, res) => {
+    const token = firmarToken({
+      id: req.usuario.id,
+      nombre: req.usuario.nombre,
+      email: req.usuario.email,
+      rol: req.usuario.rol,
+    });
+    res.json({ ok: true, token });
+  })
+);
+
 /* Bootstrap: crea el PRIMER administrador solo si no existen usuarios. */
 router.post(
   '/setup',
@@ -59,6 +77,7 @@ router.post(
 
     const { nombre, email, password } = req.body;
     if (!nombre || !email || !password) throw badRequest('Nombre, email y contraseña son obligatorios');
+    validarPassword(password);
 
     const rol = (await query("SELECT id FROM dbo.roles WHERE nombre = 'Administrador'")).recordset[0];
     const hash = await bcrypt.hash(password, 10);
@@ -108,6 +127,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { token, password } = req.body;
     if (!token || !password) throw badRequest('Token y nueva contraseña son obligatorios');
+    validarPassword(password);
 
     const usuario = (
       await query(

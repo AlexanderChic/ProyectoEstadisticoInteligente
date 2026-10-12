@@ -4,6 +4,7 @@ import { query } from '../config/db.js';
 import { autenticar, permitirRoles } from '../middleware/auth.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { badRequest, notFound } from '../utils/httpError.js';
+import { validarPassword } from '../utils/password.js';
 
 const router = Router();
 
@@ -40,6 +41,7 @@ router.post(
     const { nombre, email, password, rol_id } = req.body;
     if (!nombre || !email || !password || !rol_id)
       throw badRequest('Nombre, email, contraseña y rol son obligatorios');
+    validarPassword(password);
 
     const hash = await bcrypt.hash(password, 10);
     const { recordset } = await query(
@@ -63,7 +65,10 @@ router.put(
     if (!existe) throw notFound('Usuario no encontrado');
 
     let hash = null;
-    if (password) hash = await bcrypt.hash(password, 10);
+    if (password) {
+      validarPassword(password);
+      hash = await bcrypt.hash(password, 10);
+    }
 
     await query(
       `UPDATE dbo.usuarios
