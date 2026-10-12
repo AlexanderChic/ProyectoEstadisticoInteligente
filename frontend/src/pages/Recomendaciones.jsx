@@ -11,6 +11,7 @@ export default function Recomendaciones() {
   const [pid, setPid] = useState('');
   const [optima, setOptima] = useState(null);
   const [ia, setIa] = useState('');
+  const [iaAviso, setIaAviso] = useState('');
   const [cargandoIa, setCargandoIa] = useState(false);
   const [error, setError] = useState('');
 
@@ -35,11 +36,15 @@ export default function Recomendaciones() {
     setCargandoIa(true);
     setError('');
     setIa('');
+    setIaAviso('');
     try {
       const { data } = await api.post('/recomendaciones/ia');
-      setIa(data.data.insights);
+      // Degradación elegante: si la IA no está disponible, se muestra el aviso.
+      if (data.data.disponible === false) setIaAviso(data.data.mensaje);
+      else setIa(data.data.insights);
     } catch (e) {
-      setError(errorMsg(e));
+      // Aunque el backend ya no suele fallar, se muestra un aviso, no se rompe.
+      setIaAviso('No se pudo generar el análisis en este momento. El resto del sistema sigue funcionando.');
     } finally {
       setCargandoIa(false);
     }
@@ -149,6 +154,11 @@ export default function Recomendaciones() {
               )}
               {ia && (
                 <div className="alert alert-info mt-3 mb-0" style={{ whiteSpace: 'pre-wrap' }}>{ia}</div>
+              )}
+              {iaAviso && (
+                <div className="alert alert-warning mt-3 mb-0">
+                  <i className="bi bi-exclamation-triangle me-1"></i>{iaAviso}
+                </div>
               )}
             </div>
           </div>

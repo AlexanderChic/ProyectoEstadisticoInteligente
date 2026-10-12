@@ -4,7 +4,7 @@ import { autenticar, permitirRoles } from '../middleware/auth.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { badRequest } from '../utils/httpError.js';
 import { media, proyectarDemanda, tendenciaLineal } from '../utils/statistics.js';
-import { iaDisponible, generarInsights } from '../services/iaService.js';
+import { generarInsightsResiliente, estadoBreaker } from '../services/iaService.js';
 
 const router = Router();
 router.use(autenticar);
@@ -96,13 +96,6 @@ router.post(
   '/ia',
   permitirRoles('Administrador', 'Propietario'),
   asyncHandler(async (req, res) => {
-    if (!iaDisponible()) {
-      return res.status(503).json({
-        ok: false,
-        error: 'IA no configurada. Defina ANTHROPIC_API_KEY en el archivo .env del backend.',
-      });
-    }
-
     // Reúne un contexto estadístico compacto para la IA
     const ranking = (
       await query(
@@ -124,16 +117,26 @@ router.post(
     ).recordset[0];
 
     const contexto = { kpis, productos_mas_vendidos: ranking, productos_bajo_stock: bajoStock };
-    const texto = await generarInsights(contexto);
 
-    // Guarda la recomendación de IA
+    // Llamada resiliente: nunca lanza excepción ni deja la pantalla colgada.
+    const resultado = await generarInsightsResiliente(contexto);
+
+    if (!resultado.disponible) {
+      // Degradación elegante: se responde 200 con el aviso; el frontend lo muestra.
+      return res.json({
+        ok: true,
+        data: { disponible: false, mensaje: resultado.mensaje, estado_breaker: estadoBreaker().estado },
+      });
+    }
+
+    // Guarda la recomendación de IA solo cuando se obtuvo correctamente
     await query(
       `INSERT INTO dbo.recomendaciones (tipo, titulo, contenido, origen)
        VALUES ('INSIGHT_IA', @titulo, @contenido, 'IA')`,
-      { titulo: 'Análisis inteligente de negocio', contenido: texto }
+      { titulo: 'Análisis inteligente de negocio', contenido: resultado.insights }
     );
 
-    res.json({ ok: true, data: { insights: texto } });
+    res.json({ ok: true, data: { disponible: true, insights: resultado.insights } });
   })
 );
 
