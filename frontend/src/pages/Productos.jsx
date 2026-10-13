@@ -196,6 +196,15 @@ export default function Productos() {
               <label className="form-label">Stock mínimo</label>
               <input type="number" step="0.01" className="form-control" value={form.stock_minimo} onChange={set('stock_minimo')} />
             </div>
+            {modal.id && (
+              <div className="col-md-12">
+                <div className="form-check form-switch">
+                  <input className="form-check-input" type="checkbox" checked={form.activo !== false && form.activo !== 0}
+                    onChange={(e) => setForm({ ...form, activo: e.target.checked })} />
+                  <label className="form-check-label">Producto activo (desactive para ocultarlo; actívelo para reactivar uno eliminado)</label>
+                </div>
+              </div>
+            )}
           </div>
         </Modal>
       )}

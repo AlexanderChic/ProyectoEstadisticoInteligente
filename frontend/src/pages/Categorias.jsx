@@ -23,7 +23,7 @@ export default function Categorias() {
   }, []);
 
   const abrir = (c = null) => {
-    setForm(c ? { nombre: c.nombre, descripcion: c.descripcion || '' } : { nombre: '', descripcion: '' });
+    setForm(c ? { nombre: c.nombre, descripcion: c.descripcion || '', activo: c.activo } : { nombre: '', descripcion: '' });
     setModal(c || {});
   };
 
@@ -129,6 +129,13 @@ export default function Categorias() {
               onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
             />
           </div>
+          {modal.id && (
+            <div className="form-check form-switch mt-2">
+              <input className="form-check-input" type="checkbox" checked={form.activo !== false && form.activo !== 0}
+                onChange={(e) => setForm({ ...form, activo: e.target.checked })} />
+              <label className="form-check-label">Categoría activa (actívela para reactivar una eliminada)</label>
+            </div>
+          )}
         </Modal>
       )}
     </>

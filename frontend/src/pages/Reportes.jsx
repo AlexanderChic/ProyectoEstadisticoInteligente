@@ -27,6 +27,25 @@ export default function Reportes() {
     }
   }
 
+  // Valida el rango de fechas del reporte de ventas antes de generarlo.
+  function descargarVentas(ruta, nombre) {
+    const { desde, hasta } = rango;
+    if (!desde || !hasta) {
+      setError('Debe seleccionar la fecha "Desde" y "Hasta" para generar el reporte de ventas.');
+      return;
+    }
+    const dd = new Date(desde), dh = new Date(hasta);
+    if (isNaN(dd) || isNaN(dh) || dd.getFullYear() < 2000 || dh.getFullYear() < 2000) {
+      setError('Las fechas no son válidas (el año debe ser 2000 o posterior).');
+      return;
+    }
+    if (dd > dh) {
+      setError('La fecha "Desde" no puede ser mayor que la fecha "Hasta".');
+      return;
+    }
+    descargar(ruta, nombre, { desde, hasta });
+  }
+
   const Boton = ({ onClick, nombre, icon, texto, color = 'primary' }) => (
     <button className={`btn btn-outline-${color}`} onClick={onClick} disabled={descargando === nombre}>
       <i className={`bi ${icon} me-1`}></i>
@@ -54,11 +73,11 @@ export default function Reportes() {
           </div>
           <div className="d-flex gap-2 flex-wrap">
             <Boton
-              onClick={() => descargar('/reportes/ventas/pdf', 'reporte_ventas.pdf', { desde: rango.desde || undefined, hasta: rango.hasta || undefined })}
+              onClick={() => descargarVentas('/reportes/ventas/pdf', 'reporte_ventas.pdf')}
               nombre="reporte_ventas.pdf" icon="bi-file-earmark-pdf" texto="Ventas (PDF)" color="danger"
             />
             <Boton
-              onClick={() => descargar('/reportes/ventas/excel', 'reporte_ventas.xlsx', { desde: rango.desde || undefined, hasta: rango.hasta || undefined })}
+              onClick={() => descargarVentas('/reportes/ventas/excel', 'reporte_ventas.xlsx')}
               nombre="reporte_ventas.xlsx" icon="bi-file-earmark-excel" texto="Ventas (Excel)" color="success"
             />
           </div>

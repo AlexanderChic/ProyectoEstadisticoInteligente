@@ -4,24 +4,26 @@ import { useAuth } from '../context/AuthContext.jsx';
 import BarraAcciones from './BarraAcciones.jsx';
 import { AccionesProvider } from '../context/AccionesContext.jsx';
 
+const TODOS = ['Administrador', 'Propietario', 'Empleado'];
+const GESTION = ['Administrador', 'Propietario']; // análisis, reportes (no Empleado)
+
 const enlaces = [
   { seccion: 'Principal' },
-  { to: '/', icon: 'bi-speedometer2', texto: 'Dashboard', end: true },
-  { seccion: 'Operación' },
-  { to: '/escaner', icon: 'bi-upc-scan', texto: 'Ingreso Rápido / Escáner' },
-  { to: '/productos', icon: 'bi-box-seam', texto: 'Productos' },
-  { to: '/categorias', icon: 'bi-tags', texto: 'Categorías' },
-  { to: '/inventario', icon: 'bi-clipboard-data', texto: 'Inventario' },
-  { to: '/ventas', icon: 'bi-cart-check', texto: 'Ventas' },
-  { to: '/proveedores', icon: 'bi-truck', texto: 'Proveedores' },
-  { to: '/compras', icon: 'bi-bag-plus', texto: 'Compras' },
-  { to: '/clientes', icon: 'bi-person-vcard', texto: 'Clientes' },
-  { to: '/direcciones', icon: 'bi-geo-alt', texto: 'Direcciones' },
-  { seccion: 'Inteligencia' },
-  { to: '/analisis', icon: 'bi-graph-up-arrow', texto: 'Análisis Estadístico' },
-  { to: '/recomendaciones', icon: 'bi-lightbulb', texto: 'Recomendaciones' },
-  { to: '/reportes', icon: 'bi-file-earmark-bar-graph', texto: 'Reportes' },
-  { to: '/importacion', icon: 'bi-upload', texto: 'Importar Excel' },
+  { to: '/', icon: 'bi-speedometer2', texto: 'Dashboard', end: true, roles: TODOS },
+  { seccion: 'Operación', roles: TODOS },
+  { to: '/escaner', icon: 'bi-upc-scan', texto: 'Ingreso Rápido / Escáner', roles: TODOS },
+  { to: '/productos', icon: 'bi-box-seam', texto: 'Productos', roles: TODOS },
+  { to: '/categorias', icon: 'bi-tags', texto: 'Categorías', roles: TODOS },
+  { to: '/inventario', icon: 'bi-clipboard-data', texto: 'Inventario', roles: TODOS },
+  { to: '/ventas', icon: 'bi-cart-check', texto: 'Ventas', roles: TODOS },
+  { to: '/proveedores', icon: 'bi-truck', texto: 'Proveedores', roles: TODOS },
+  { to: '/compras', icon: 'bi-bag-plus', texto: 'Compras', roles: TODOS },
+  { to: '/clientes', icon: 'bi-person-vcard', texto: 'Clientes y Direcciones', roles: TODOS },
+  { seccion: 'Inteligencia', roles: GESTION },
+  { to: '/analisis', icon: 'bi-graph-up-arrow', texto: 'Análisis Estadístico', roles: GESTION },
+  { to: '/recomendaciones', icon: 'bi-lightbulb', texto: 'Recomendaciones', roles: GESTION },
+  { to: '/reportes', icon: 'bi-file-earmark-bar-graph', texto: 'Reportes', roles: GESTION },
+  { to: '/importacion', icon: 'bi-upload', texto: 'Importar Excel', roles: GESTION },
   { seccion: 'Administración', roles: ['Administrador'] },
   { to: '/usuarios', icon: 'bi-people', texto: 'Usuarios', roles: ['Administrador'] },
   { to: '/configuracion-factura', icon: 'bi-receipt-cutoff', texto: 'Config. Factura', roles: ['Administrador'] },

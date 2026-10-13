@@ -28,6 +28,9 @@ export default function VentaRapida({ abierto, onCerrar, onCambio }) {
   const [dirAbierto, setDirAbierto] = useState(false);
   const [dirClienteId, setDirClienteId] = useState(null);
   const [dirDireccionId, setDirDireccionId] = useState(null);
+  // Búsqueda de cliente por nombre (llena NIT y dirección)
+  const [cliOpciones, setCliOpciones] = useState([]);
+  const [cliAbierto, setCliAbierto] = useState(false);
   // Búsqueda de producto por nombre (para los que no tienen código de barras)
   const [prodBusqueda, setProdBusqueda] = useState('');
   const [prodOpciones, setProdOpciones] = useState([]);
@@ -39,7 +42,7 @@ export default function VentaRapida({ abierto, onCerrar, onCambio }) {
     if (abierto) {
       setItems([]); setFactura(null); setError(''); setAviso(''); setCodigo('');
       setNit(''); setNombreCliente(''); setDirBusqueda(''); setDirSeleccionada(''); setDirOpciones([]);
-      setDirClienteId(null); setDirDireccionId(null);
+      setDirClienteId(null); setDirDireccionId(null); setCliOpciones([]); setCliAbierto(false);
       api.get('/config/factura').then((r) => setConfig(r.data.data)).catch(() => {});
       enfocar();
     }
@@ -57,6 +60,38 @@ export default function VentaRapida({ abierto, onCerrar, onCambio }) {
     }, 250);
     return () => clearTimeout(t);
   }, [dirBusqueda, dirSeleccionada, config.mostrar_direccion]);
+
+  // Búsqueda de cliente por nombre (debounced)
+  useEffect(() => {
+    if (!config.mostrar_nombre_cliente || !cliAbierto) return;
+    const t = setTimeout(async () => {
+      if (nombreCliente.trim().length < 2) { setCliOpciones([]); return; }
+      try {
+        const { data } = await api.get('/clientes', { params: { buscar: nombreCliente.trim() } });
+        setCliOpciones(data.data.slice(0, 8));
+      } catch { /* noop */ }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [nombreCliente, cliAbierto, config.mostrar_nombre_cliente]);
+
+  // Al elegir un cliente: llena NIT y su primera dirección
+  async function elegirCliente(c) {
+    setNombreCliente(c.nombre);
+    setDirClienteId(c.id);
+    if (c.nit) setNit(c.nit);
+    setCliAbierto(false);
+    setCliOpciones([]);
+    try {
+      const { data } = await api.get('/direcciones', { params: { buscar: c.nombre } });
+      const propias = data.data.filter((d) => d.cliente_id === c.id);
+      if (propias.length) {
+        const d = propias[0];
+        setDirSeleccionada(d.etiqueta);
+        setDirBusqueda(d.etiqueta);
+        setDirDireccionId(d.id);
+      }
+    } catch { /* noop */ }
+  }
 
   // Búsqueda de producto por nombre (debounced)
   useEffect(() => {
@@ -281,9 +316,24 @@ export default function VentaRapida({ abierto, onCerrar, onCambio }) {
                           </div>
                         )}
                         {config.mostrar_nombre_cliente && (
-                          <div className="col-md-4">
+                          <div className="col-md-4 position-relative">
                             <label className="form-label small">Nombre del cliente</label>
-                            <input className="form-control" value={nombreCliente} onChange={(e) => setNombreCliente(e.target.value)} />
+                            <input
+                              className="form-control"
+                              value={nombreCliente}
+                              onChange={(e) => { setNombreCliente(e.target.value); setCliAbierto(true); setDirClienteId(null); }}
+                              onFocus={() => setCliAbierto(true)}
+                              placeholder="Buscar cliente..."
+                            />
+                            {cliAbierto && cliOpciones.length > 0 && (
+                              <ul className="list-group position-absolute w-100 shadow-sm" style={{ zIndex: 6, maxHeight: 200, overflowY: 'auto' }}>
+                                {cliOpciones.map((c) => (
+                                  <li key={c.id} className="list-group-item list-group-item-action py-1 small" role="button" onMouseDown={(e) => { e.preventDefault(); elegirCliente(c); }}>
+                                    {c.nombre}{c.telefono ? ` · ${c.telefono}` : ''}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
                           </div>
                         )}
                         {config.mostrar_direccion && (
